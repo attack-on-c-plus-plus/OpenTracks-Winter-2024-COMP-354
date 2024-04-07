@@ -163,16 +163,12 @@ public class RunLiftStatistics {
         }
 
         public boolean isLift() {
-            float gain = trackStatistics.getTotalAltitudeGain() != null ? trackStatistics.getTotalAltitudeGain() : 0f;
-            float loss = trackStatistics.getTotalAltitudeLoss() != null ? trackStatistics.getTotalAltitudeLoss() : 0f;
-            return gain >= loss;
+            return gain_m >= loss_m;
         }
 
         public double getSlopePercentage() {
-            if (trackStatistics.getTotalDistance().distance_m() == 0) return 0;
-            double gain = trackStatistics.getTotalAltitudeGain() != null ? trackStatistics.getTotalAltitudeGain() : 0.0;
-            double loss = trackStatistics.getTotalAltitudeLoss() != null ? trackStatistics.getTotalAltitudeLoss() : 0.0;
-            return Math.abs(gain - loss) / trackStatistics.getTotalDistance().distance_m() * 100;
+            if (distance.distance_m() == 0) return 0;
+            return Math.abs(gain_m - loss_m) / distance.distance_m() * 100;
         }
 
         private void add(TrackStatistics trackStatistics, @Nullable TrackPoint lastTrackPoint) {
