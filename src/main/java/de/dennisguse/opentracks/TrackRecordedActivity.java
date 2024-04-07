@@ -111,6 +111,37 @@ public class TrackRecordedActivity extends AbstractTrackDeleteActivity implement
         setSupportActionBar(viewBinding.bottomAppBarLayout.bottomAppBar);
 
         postponeEnterTransition();
+
+        FloatingActionButton fabCalculateMovingAverage = findViewById(R.id.fab_calculate_moving_average_2);
+        fabCalculateMovingAverage.setOnClickListener(view -> {
+            // Code to show the menu and handle the selection.
+            showSelectionMenu();
+        });
+
+    }
+
+    private void showSelectionMenu() {
+        final CharSequence[] items = {"5", "10", "15"};
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select value");
+        builder.setItems(items, (dialog, which) -> {
+            // 'which' is the index of the selected item
+            int selectedValue = Integer.parseInt(items[which].toString());
+
+            // Save the selected value
+            saveSelectedValue(selectedValue);
+            // Do something with the selectedValue, like storing it for later use
+            Log.d(TAG, "Selected value: " + selectedValue);
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void saveSelectedValue(int value) {
+        SharedPreferences sharedPreferences = getSharedPreferences("AppPreferences", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("SelectedValue", value);
+        editor.apply(); // Using apply() to save asynchronously
     }
 
     @Override
