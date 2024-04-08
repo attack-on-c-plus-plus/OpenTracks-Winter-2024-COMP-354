@@ -108,8 +108,10 @@ public class RunLiftStatistics {
         private Float gain_m;
         private Float loss_m;
         private HeartRate avgHeartRate;
+        private Speed maxSpeed = Speed.of(0);
 
         private Duration waitTime = Duration.ofSeconds(0);
+        private Duration totalTime = Duration.ofSeconds(0);
 
         public SkiSubActivity() {
             trackStatistics = new TrackStatistics();
@@ -131,8 +133,10 @@ public class RunLiftStatistics {
         }
 
         public Speed getSpeed() {
-            return Speed.of(distance, time);
+            return Speed.of(distance, time.minus(waitTime));
         }
+
+        public Speed getMaxSpeed() { return maxSpeed; }
 
         public boolean hasGain() {
             return gain_m != null;
@@ -166,6 +170,8 @@ public class RunLiftStatistics {
             return gain_m >= loss_m;
         }
 
+        public Duration getTotalTime() { return totalTime; }
+
         public double getSlopePercentage() {
             if (distance.distance_m() == 0) return 0;
             return Math.abs(gain_m - loss_m) / distance.distance_m() * 100;
@@ -177,6 +183,9 @@ public class RunLiftStatistics {
             gain_m = trackStatistics.hasTotalAltitudeGain() ? trackStatistics.getTotalAltitudeGain() : gain_m;
             loss_m = trackStatistics.hasTotalAltitudeLoss() ? trackStatistics.getTotalAltitudeLoss() : loss_m;
             avgHeartRate = trackStatistics.getAverageHeartRate();
+            maxSpeed = trackStatistics.getMaxSpeed();
+            totalTime = trackStatistics.getTotalTime();
+
             //set(trackStatistics);
             if (lastTrackPoint == null) {
                 return;
