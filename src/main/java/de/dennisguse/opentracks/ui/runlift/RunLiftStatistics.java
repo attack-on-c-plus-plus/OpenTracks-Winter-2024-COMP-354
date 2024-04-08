@@ -197,7 +197,6 @@ public class RunLiftStatistics {
             if (hasLoss() && lastTrackPoint.hasAltitudeLoss()) {
                 loss_m = loss_m - lastTrackPoint.getAltitudeLoss();
             }
-
         }
 
         private void set(TrackStatistics trackStatistics) {

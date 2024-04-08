@@ -22,8 +22,11 @@ import androidx.annotation.VisibleForTesting;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
+import de.dennisguse.opentracks.data.models.ActivityType;
 import de.dennisguse.opentracks.data.models.Altitude;
+import de.dennisguse.opentracks.data.models.AltitudeGainLoss;
 import de.dennisguse.opentracks.data.models.Distance;
 import de.dennisguse.opentracks.data.models.HeartRate;
 import de.dennisguse.opentracks.data.models.Speed;
@@ -44,6 +47,23 @@ public class TrackStatistics {
     // The min and max altitude (meters) seen on this track.
     private final ExtremityMonitor altitudeExtremities = new ExtremityMonitor();
 
+    // The total number of runs in a season.
+    private int totalRunsSeason;
+
+    // The total number of days skied in a season.
+    private int totalSkiDaysSeason;
+
+    // The total distance skied (consider all tracks) in a season.
+    private Distance totalTrackDistanceSeason;
+
+    // The total distance covered while in vertical descents in a season.
+    private Distance totalVerticalDescentSeason;
+
+    // The average speed in a season.
+    private Speed avgSpeedSeason;
+
+    // The slope percentage in a season.
+    private double slopePercentageSeason;
     // The track start time.
     private Instant startTime;
     // The track stop time.
@@ -55,6 +75,8 @@ public class TrackStatistics {
     // Based on when we believe the user is traveling.
     private Duration movingTime;
     // The maximum speed (meters/second) that we believe is valid.
+
+    private Speed avgMovingSpeed;
     private Speed maxSpeed;
     private Float totalAltitudeGain_m = null;
     private Float totalAltitudeLoss_m = null;
@@ -62,6 +84,75 @@ public class TrackStatistics {
     private HeartRate avgHeartRate = null;
 
     private boolean isIdle;
+
+    //==========================================================================//
+    private Duration chairliftWaitingTime;
+    private Distance chairliftElevationGain;
+    private Speed chairliftConstantSpeed;
+
+    private Duration skiingWaitingTime;
+    private Distance skiingDistance;
+    private Speed skiingSpeed;
+
+    public Duration getSkiingWaitingTime() {
+        return skiingWaitingTime;
+    }
+
+    public void setSkiingWaitingTime(Duration skiingWaitingTime) {
+        this.skiingWaitingTime = skiingWaitingTime;
+    }
+
+    public Distance getSkiingDistance() {
+        return skiingDistance;
+    }
+
+    public void setSkiingDistance(Distance skiingDistance) {
+        this.skiingDistance = skiingDistance;
+    }
+
+    public Speed getSkiingSpeed() {
+        return skiingSpeed;
+    }
+
+    public void setSkiingSpeed(Speed skiingSpeed) {
+        this.skiingSpeed = skiingSpeed;
+    }
+
+    public Duration getWaitingTime() {
+        return waitingTime;
+    }
+
+    public void setWaitingTime(Duration waitingTime) {
+        this.waitingTime = waitingTime;
+    }
+
+    public Distance getWaitingTimeDistance() {
+        return waitingTimeDistance;
+    }
+
+    public void setWaitingTimeDistance(Distance waitingTimeDistance) {
+        this.waitingTimeDistance = waitingTimeDistance;
+    }
+
+    public Speed getWaitingTimeSpeed() {
+        return waitingTimeSpeed;
+    }
+
+    public void setWaitingTimeSpeed(Speed waitingTimeSpeed) {
+        this.waitingTimeSpeed = waitingTimeSpeed;
+    }
+
+    private Duration waitingTime;
+    private Distance waitingTimeDistance;
+    private Speed waitingTimeSpeed;
+
+
+    private boolean waiting;
+    private boolean skiing;
+    private boolean chairlift;
+
+    //===========================================================================//
+
 
     public TrackStatistics() {
         reset();
@@ -78,12 +169,18 @@ public class TrackStatistics {
         totalDistance = other.totalDistance;
         totalTime = other.totalTime;
         movingTime = other.movingTime;
+        avgMovingSpeed = Speed.of(other.totalDistance.toM() / other.movingTime.toSeconds());
         maxSpeed = other.maxSpeed;
         altitudeExtremities.set(other.altitudeExtremities.getMin(), other.altitudeExtremities.getMax());
         totalAltitudeGain_m = other.totalAltitudeGain_m;
         totalAltitudeLoss_m = other.totalAltitudeLoss_m;
         avgHeartRate = other.avgHeartRate;
         isIdle = other.isIdle;
+        //===========================================//
+        chairliftConstantSpeed = other.chairliftConstantSpeed;
+        chairliftElevationGain = other.chairliftElevationGain;
+        chairliftWaitingTime = other.chairliftWaitingTime;
+        //===========================================//
     }
 
     @VisibleForTesting
@@ -93,6 +190,7 @@ public class TrackStatistics {
         this.totalDistance = Distance.of(totalDistance_m);
         this.totalTime = Duration.ofSeconds(totalTime_s);
         this.movingTime = Duration.ofSeconds(movingTime_s);
+        this.avgMovingSpeed = Speed.of(totalDistance_m / movingTime_s);
         this.maxSpeed = Speed.of(maxSpeed_mps);
         this.totalAltitudeGain_m = totalAltitudeGain_m;
         this.totalAltitudeLoss_m = totalAltitudeLoss_m;
@@ -132,6 +230,7 @@ public class TrackStatistics {
         totalDistance = totalDistance.plus(other.totalDistance);
         totalTime = totalTime.plus(other.totalTime);
         movingTime = movingTime.plus(other.movingTime);
+        avgMovingSpeed = Speed.of(totalDistance.toM() / movingTime.toSeconds());
         maxSpeed = Speed.max(maxSpeed, other.maxSpeed);
         if (other.altitudeExtremities.hasData()) {
             altitudeExtremities.update(other.altitudeExtremities.getMin());
@@ -168,11 +267,14 @@ public class TrackStatistics {
         setTotalDistance(Distance.of(0));
         setTotalTime(Duration.ofSeconds(0));
         setMovingTime(Duration.ofSeconds(0));
+        setAvgMovingSpeed(Speed.of(0));
         setMaxSpeed(Speed.zero());
         setTotalAltitudeGain(null);
         setTotalAltitudeLoss(null);
 
         isIdle = false;
+
+
     }
 
     public void reset(Instant startTime) {
@@ -241,6 +343,29 @@ public class TrackStatistics {
         addMovingTime(Duration.between(lastTrackPoint.getTime(), trackPoint.getTime()));
     }
 
+    public Speed getAvgMovingSpeed() { return avgMovingSpeed; }
+
+    public void setAvgMovingSpeed(Speed avgMovingSpeed) { this.avgMovingSpeed = avgMovingSpeed; }
+
+    //================================================================================//
+    public Duration getChairliftWaitingTime(){
+        return chairliftWaitingTime;
+    }
+    public void setChairliftWaitingTime(Duration chairliftWaitingTime){
+        this.chairliftWaitingTime = chairliftWaitingTime;
+    }
+    public Distance getChairliftElevationGain(){
+        return chairliftElevationGain;
+    }
+    public void setChairliftElevationGain(Distance chairliftElevationGain){
+        this.chairliftElevationGain = chairliftElevationGain;
+    }
+    public Speed getChairliftConstantSpeed(){
+        return chairliftConstantSpeed;
+    }
+    public void setChairliftConstantSpeed(Speed chairliftConstantSpeed){
+        this.chairliftConstantSpeed = chairliftConstantSpeed;
+    }
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     public void addMovingTime(Duration time) {
         if (time.isNegative()) {
@@ -366,6 +491,58 @@ public class TrackStatistics {
     public void setTotalAltitudeLoss(Float totalAltitudeLoss_m) {
         this.totalAltitudeLoss_m = totalAltitudeLoss_m;
     }
+    public int getTotalRunsSeason(){
+        return this.totalRunsSeason;
+    }
+
+    public void setTotalRunsSeason(int totalRunsSeason){
+        this.totalRunsSeason = totalRunsSeason;
+    }
+
+
+    public int getTotalSkiDaysSeason(){
+        return this.totalSkiDaysSeason;
+    }
+
+    public void setTotalSkiDaysSeason(int totalSkiDaysSeason){
+        this.totalSkiDaysSeason = totalSkiDaysSeason;
+    }
+
+
+    public Distance getTotalTrackDistanceSeason(){
+        return this.totalTrackDistanceSeason;
+    }
+
+    public void setTotalTrackDistanceSeason(Distance totalTrackDistanceSeason){
+        this.totalTrackDistanceSeason = totalTrackDistanceSeason;
+    }
+
+
+    public Distance getTotalVerticalDescentSeasonSeason(){
+        return this.totalVerticalDescentSeason;
+    }
+
+    public void setTotalVerticalDescentSeason(Distance totalVerticalDescentSeason){
+        this.totalVerticalDescentSeason = totalVerticalDescentSeason;
+    }
+
+
+    public Speed getAvgSpeedSeason(){
+        return this.avgSpeedSeason;
+    }
+
+    public void setAvgSpeedSeason(Speed avgSpeedSeason){
+        this.avgSpeedSeason = avgSpeedSeason;
+    }
+
+
+    public double getSlopePercentageSeason(){
+        return this.slopePercentageSeason;
+    }
+
+    public void setSlopePercentageSeason(double slopePercentageSeason){
+        this.slopePercentageSeason = slopePercentageSeason;
+    }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     public void addTotalAltitudeLoss(float loss_m) {
@@ -373,6 +550,41 @@ public class TrackStatistics {
             totalAltitudeLoss_m = 0f;
         }
         totalAltitudeLoss_m += loss_m;
+    }
+
+    public static TrackStatistics sumOfTotalStats(List<TrackStatistics> trackStatistics)
+    {
+        TrackStatistics sum = new TrackStatistics();
+
+        int totalRuns = 0;
+        int totalSkiDays = 0;
+        Distance totalTrackDistance = Distance.of(0);
+        Distance totalVerticalDescent = Distance.of(0);
+        double totalAvgSpeed = 0;
+        double totalSlopePercentage = 0;
+
+        for(TrackStatistics trackStat : trackStatistics)
+        {
+            totalRuns += trackStat.getTotalRunsSeason();
+            totalSkiDays += trackStat.getTotalSkiDaysSeason();
+            totalTrackDistance = totalTrackDistance.plus(trackStat.getTotalTrackDistanceSeason());
+            totalVerticalDescent = totalVerticalDescent.plus(trackStat.getTotalVerticalDescentSeasonSeason());
+            totalAvgSpeed += trackStat.getAvgSpeedSeason().speed_mps();
+            totalSlopePercentage += trackStat.getSlopePercentageSeason();
+        }
+
+        int numTracks = trackStatistics.size();
+        totalAvgSpeed /= numTracks;
+        totalSlopePercentage /= numTracks;
+
+        sum.setTotalRunsSeason(totalRuns);
+        sum.setTotalSkiDaysSeason(totalSkiDays);
+        sum.setTotalTrackDistanceSeason(totalTrackDistance);
+        sum.setTotalVerticalDescentSeason(totalVerticalDescent);
+        sum.setAvgSpeedSeason(Speed.of(totalAvgSpeed));
+        sum.setSlopePercentageSeason(totalSlopePercentage);
+
+        return sum;
     }
 
     @Override
@@ -388,9 +600,13 @@ public class TrackStatistics {
     public String toString() {
         return "TrackStatistics { Start Time: " + getStartTime() + "; Stop Time: " + getStopTime()
                 + "; Total Distance: " + getTotalDistance() + "; Total Time: " + getTotalTime()
-                + "; Moving Time: " + getMovingTime() + "; Max Speed: " + getMaxSpeed()
+                + "; Moving Time: " + getMovingTime() + "; Average Moving Speed: " + getAvgMovingSpeed()
+                + "; Max Speed: " + getMaxSpeed()
                 + "; Min Altitude: " + getMinAltitude() + "; Max Altitude: " + getMaxAltitude()
                 + "; Altitude Gain: " + getTotalAltitudeGain()
-                + "; Altitude Loss: " + getTotalAltitudeLoss() + "}";
+                + "; Altitude Loss: " + getTotalAltitudeLoss()
+                + "; Chairlift Waiting Time: " + getChairliftWaitingTime()
+                + "; Chairlift Elevation Gain: " + getChairliftElevationGain()
+                + "; Chairlift Constant Speed: " + getChairliftConstantSpeed()+ "}";
     }
 }
