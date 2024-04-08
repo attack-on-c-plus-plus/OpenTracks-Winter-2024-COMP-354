@@ -54,6 +54,9 @@ import de.dennisguse.opentracks.ui.markers.MarkerUtils;
 import de.dennisguse.opentracks.ui.util.ThemeUtils;
 import de.dennisguse.opentracks.util.IntentUtils;
 import de.dennisguse.opentracks.util.StringUtils;
+import de.dennisguse.opentracks.data.models.TrackPoint;
+import de.dennisguse.opentracks.data.models.TrackPointUtils;
+import de.dennisguse.opentracks.chart.ChartPoint;
 
 /**
  * Visualization of the chart.
@@ -1045,4 +1048,43 @@ public class ChartView extends View {
 
         return chartValueSeries.drawIfChartPointHasNoData();
     }
+
+    // Integrate the calculateSpeedMovingAverage method from TrackPointUtils.java in order to connect calculated moving average speeds to chart
+    public List<Double> calculateSpeedMovingAverage(List<TrackPoint> trackPoints, int numDataPoints) {
+        return TrackPointUtils.calculateSpeedMovingAverage(trackPoints, numDataPoints);
+    }
+
+    // Method to update chart data
+    public void updateChartData(List<TrackPoint> trackPoints, int numDataPoints) {
+        
+        // Calculates moving average speeds
+        List<Double> movingAverages = calculateSpeedMovingAverage(trackPoints, numDataPoints);
+        
+        // Clears current chart view
+        chartPoints.clear();
+        
+        // Update chart data with moving average speeds where the time interval is 5 seconds
+        for (int i = 0; i < movingAverages.size(); i++) {
+            
+            // x-axis represents time and multiplied by 5 for every 5 seconds
+            double xValue = i * 5;
+            // Moving average speed
+            double yValue = movingAverages.get(i);
+            
+            // New chart point created
+            ChartPoint chartPoint = new ChartPoint(xValue, yValue);
+            // New chart point added to current chart points
+            chartPoints.add(chartPoint);
+        }
+        
+        // Updates the path after data or dimensions are changed
+        updateSeries(); 
+        
+        // Updates the chart dimensions
+        updateDimensions();
+        
+        // Updates the effective dimensions
+        updateEffectiveDimensions();
+    }
+    
 }
