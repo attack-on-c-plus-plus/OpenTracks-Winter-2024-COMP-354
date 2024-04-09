@@ -8,7 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.dennisguse.opentracks.data.models.Speed;
 import de.dennisguse.opentracks.data.models.Track;
+import de.dennisguse.opentracks.stats.MockupData;
 import de.dennisguse.opentracks.stats.TrackStatistics;
 
 public class AggregatedStatistics {
@@ -21,7 +23,10 @@ public class AggregatedStatistics {
         for (Track track : tracks) {
             aggregate(track);
         }
-
+        MockupData mockupData = new MockupData();
+        List<TrackStatistics> trackStatistics = mockupData.getTrackStatistics();
+        //int getTotalRuns = trackStatistics.get(0).getTotalRunsSeason();
+        //int getTotalRuns2 = trackStatistics.get(1).getTotalRunsSeason();
         dataList.addAll(dataMap.values());
         dataList.sort((o1, o2) -> {
             if (o1.getCountTracks() == o2.getCountTracks()) {
@@ -58,9 +63,17 @@ public class AggregatedStatistics {
         private final TrackStatistics trackStatistics;
         private int countTracks = 1;
 
+        // My code
+        private ArrayList<TrackStatistics> listOfTracks;
+
         public AggregatedStatistic(String activityTypeLocalized, TrackStatistics trackStatistics) {
             this.activityTypeLocalized = activityTypeLocalized;
             this.trackStatistics = trackStatistics;
+
+            // My code
+            this.listOfTracks = new ArrayList<TrackStatistics>();
+            this.listOfTracks.add(trackStatistics);
+
         }
 
         public String getActivityTypeLocalized() {
@@ -78,6 +91,12 @@ public class AggregatedStatistics {
         void add(TrackStatistics statistics) {
             trackStatistics.merge(statistics);
             countTracks++;
+
+            // My code
+            listOfTracks.add(statistics);
         }
+
+        // My code
+        public ArrayList<TrackStatistics> getListOfTracks() {return listOfTracks;}
     }
 }

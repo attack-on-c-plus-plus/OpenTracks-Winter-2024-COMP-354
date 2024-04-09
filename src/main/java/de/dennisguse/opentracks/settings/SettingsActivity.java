@@ -90,10 +90,19 @@ public class SettingsActivity extends AbstractActivity implements ChooseActivity
             fragment = new SensorsSettingsFragment();
         } else if (key.equals(getString(R.string.settings_announcements_key))) {
             fragment = new AnnouncementsSettingsFragment();
+        } else if (key.equals(getString(R.string.settings_stats_display_key))) {
+            fragment = new StatisticsSettingsFragment();
         } else if (key.equals(getString(R.string.settings_import_export_key))) {
             fragment = new ImportExportSettingsFragment();
         } else if (key.equals(getString(R.string.settings_api_key))) {
             fragment = new PublicAPISettingsFragment();
+        } else if (key.equals(getString(R.string.settings_user_profile_key))) {
+            fragment = new UserProfileFragment();
+        } else if (key.equals(getString(R.string.settings_ski_profile_key))) {
+            fragment = new SkiProfileFragment();
+        }
+        else if (key.equals(getString(R.string.settings_maintenance_info_key))) {
+            fragment = new MaintenancePreferenceFragment();
         }
 
         return fragment;
