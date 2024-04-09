@@ -511,6 +511,11 @@ limitations under the License.
         <item>50 km</item>
         <item>75 km</item>
         <item>100 km</item>
+        <item>125 km</item>
+        <item>150 km</item>
+        <item>175 km</item>
+        <item>200 km</item>
+
     </string-array>
 
     <string-array name="interval_values">
@@ -519,6 +524,10 @@ limitations under the License.
         <item>50 km</item>
         <item>75 km</item>
         <item>100 km</item>
+        <item>125 km</item>
+        <item>150 km</item>
+        <item>175 km</item>
+        <item>200 km</item>
     </string-array>
 
     <string-array name="wax_type_entries">
